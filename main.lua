@@ -2,7 +2,9 @@ game = {
   current_state = "menu",
   states = {
     menu = {},
-    scoreboard = {},
+    scoreboard = {
+      times_played = 0,
+    },
     playing = {
       player_x = 0,
       player_y = 0,
@@ -21,6 +23,21 @@ function game:link_event(event)
   end
 end
 
+function game:change_state(state)
+  if self.states[state] ~= nil then
+
+    if self.states[self.current_state].exited ~= nil then
+      self.states[self.current_state].exited(self.states[self.current_state])
+    end
+
+    self.current_state = state
+
+    if self.states[self.current_state].entered ~= nil then
+      self.states[self.current_state].entered(self.states[self.current_state])
+    end
+  end
+end
+
 game:link_event("draw")
 game:link_event("update")
 game:link_event("keypressed")
@@ -31,8 +48,18 @@ end
 
 function game.states.menu:keypressed(key)
   if key == "space" then
-    game.current_state = "playing"
+    game:change_state("playing")
   end
+end
+
+function game.states.playing:entered()
+  print("entered the game state. resetting player position")
+  self.player_x = 0
+  self.player_y = 0
+end
+
+function game.states.playing:exited()
+  game.states.scoreboard.times_played = game.states.scoreboard.times_played + 1
 end
 
 function game.states.playing:draw()
@@ -42,7 +69,7 @@ end
 
 function game.states.playing:keypressed(key)
   if key == "space" then
-    game.current_state = "scoreboard"
+    game:change_state("scoreboard")
   end
 end
 
@@ -62,11 +89,11 @@ function game.states.playing:update(dt)
 end
 
 function game.states.scoreboard:draw()
-  love.graphics.print("This is the scoreboard. Press space to return to the menu")
+  love.graphics.print("Scoreboard times played: " .. self.times_played .. ". Press space to return to the menu")
 end
 
 function game.states.scoreboard:keypressed(key)
   if key == "space" then
-    game.current_state = "menu"
+    game:change_state("menu")
   end
 end
